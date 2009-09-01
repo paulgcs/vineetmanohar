@@ -14,5 +14,41 @@
       <version>4.0</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- log4j -->
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.0.4</version>
+    </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <!-- jaxb plugin -->
+        <groupId>org.jvnet.jaxb2.maven2</groupId>
+        <artifactId>maven-jaxb2-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+            <configuration>
+              <args>
+                <param>-npa</param>
+              </args>
+              <generatePackage>com.vineetmanohar.sitemap.jaxb</generatePackage>
+              <npa>true</npa>
+              <includeSchemas>
+                <includeSchema>sitemap.xsd</includeSchema>
+              </includeSchemas>
+              <removeOldOutput>true</removeOldOutput>
+              <verbose>true</verbose>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
