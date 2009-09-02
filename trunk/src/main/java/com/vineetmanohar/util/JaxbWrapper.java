@@ -1,8 +1,11 @@
 package com.vineetmanohar.util;
 
+import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URL;
 
 import javax.xml.bind.JAXBContext;
@@ -21,69 +24,178 @@ import org.xml.sax.SAXException;
  * @author Vineet Manohar
  */
 public class JaxbWrapper<T> {
-	private JAXBContext jaxbContext = null;
-	private SchemaFactory schemaFactory = null;
+    private JAXBContext jaxbContext = null;
 
-	private Schema schema;
+    private Schema schema;
 
-	public JaxbWrapper(URL schemaUrl, Class<?> clazz) {
-		try {
-			init(schemaUrl, clazz);
-		} catch (JAXBException e) {
-			throw new RuntimeException("Could not intialize class", e);
-		} catch (SAXException e) {
-			throw new RuntimeException("Could not intialize class", e);
-		}
-	}
+    /**
+     * @param schemaUrl
+     * @param clazz
+     * @throws JAXBException
+     * @throws SAXException
+     */
+    public JaxbWrapper(URL schemaUrl, Class<?>... clazz) throws JAXBException, SAXException {
+        SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+        this.schema = schemaFactory.newSchema(schemaUrl);
+        this.jaxbContext = JAXBContext.newInstance(clazz);
+    }
 
-	private Marshaller createMarshaller(Schema schema) throws JAXBException,
-			PropertyException {
-		Marshaller marshaller = jaxbContext.createMarshaller();
-		marshaller.setSchema(schema);
-		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, new Boolean(
-				true));
-		return marshaller;
-	}
+    /**
+     * @param schemaFile
+     * @param clazz
+     * @throws JAXBException
+     * @throws SAXException
+     */
+    public JaxbWrapper(File schemaFile, Class<?>... clazz) throws JAXBException, SAXException {
+        SchemaFactory schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+        this.schema = schemaFactory.newSchema(schemaFile);
+        this.jaxbContext = JAXBContext.newInstance(clazz);
+    }
 
-	private Unmarshaller createUnmarshaller(Schema schema) throws JAXBException {
-		Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-		unmarshaller.setSchema(schema);
-		return unmarshaller;
-	}
+    /**
+     * Converts the given object to XML
+     * 
+     * @param t
+     * @return
+     * @throws JAXBException
+     * 
+     * @author Vineet Manohar
+     */
+    public String objectToXml(T t) throws JAXBException {
+        StringWriter writer = new StringWriter();
+        objectToXml(t, writer);
+        return writer.toString();
+    }
 
-	private Marshaller createMarshaller() throws JAXBException {
-		return createMarshaller(schema);
-	}
+    /**
+     * Converts the given object to XML
+     * 
+     * @param t
+     *            the object to convert to xml
+     * @param writer
+     *            the output will be written to this writer
+     * 
+     * @throws JAXBException
+     * 
+     * @author Vineet Manohar
+     */
+    public void objectToXml(T t, Writer writer) throws JAXBException {
+        createMarshaller().marshal(t, writer);
+    }
 
-	private Unmarshaller createUnmarshaller() throws JAXBException {
-		return createUnmarshaller(schema);
-	}
+    /**
+     * Converts the given object to XML
+     * 
+     * @param t
+     *            the object to convert to xml
+     * @param outputStream
+     *            the output will be written to this output stream
+     * 
+     * @throws JAXBException
+     * 
+     * @author Vineet Manohar
+     */
+    public void objectToXml(T t, OutputStream outputStream) throws JAXBException {
+        createMarshaller().marshal(t, outputStream);
+    }
 
-	public String objectToXml(T t) throws JAXBException {
-		StringWriter writer = new StringWriter();
-		createMarshaller().marshal(t, writer);
-		return writer.toString();
-	}
+    /**
+     * Converts the given object to XML
+     * 
+     * @param t
+     *            the object to convert to xml
+     * @param file
+     *            the output will be written to this file
+     * 
+     * @throws JAXBException
+     * 
+     * @author Vineet Manohar
+     */
+    public void objectToXml(T t, File file) throws JAXBException {
+        createMarshaller().marshal(t, file);
+    }
 
-	private void init(URL schemaUrl, Class<?> clazz) throws JAXBException,
-			SAXException {
-		jaxbContext = JAXBContext.newInstance(clazz);
-		schemaFactory = SchemaFactory
-				.newInstance("http://www.w3.org/2001/XMLSchema");
+    /**
+     * validates the object against the schema, throws an Exception if
+     * validation fails
+     * 
+     * @param t
+     *            the object to validate
+     * @throws JAXBException
+     *             when schema validation fails
+     * 
+     * @author Vineet Manohar
+     */
+    public void validate(T t) throws JAXBException {
+        createMarshaller().marshal(t, new StringWriter());
+    }
 
-		schema = schemaFactory.newSchema(schemaUrl);
-	}
+    /**
+     * converts xml form to a java object
+     * 
+     * @param is
+     *            InputStream which points to a valid XML content
+     * @return the Java object representing the xml
+     * @throws JAXBException
+     *             if jaxb unmarshalling fails. Common reason is schema
+     *             incompatibility
+     * 
+     * @author Vineet Manohar
+     */
+    @SuppressWarnings("unchecked")
+    public T xmlToObject(InputStream is) throws JAXBException {
+        return (T) createUnmarshaller().unmarshal(is);
+    }
 
-	public void validate(T t) throws JAXBException {
-		createMarshaller().marshal(t, new StringWriter());
-	}
+    /**
+     * converts xml form to a java object
+     * 
+     * @param xml
+     *            a valid XML string
+     * @return the Java object representing the xml
+     * @throws JAXBException
+     *             if jaxb unmarshalling fails. Common reason is schema
+     *             incompatibility
+     * 
+     * @author Vineet Manohar
+     */
+    @SuppressWarnings("unchecked")
+    public T xmlToObject(String xml) throws JAXBException {
+        StringReader stringReader = new StringReader(xml);
+        return (T) createUnmarshaller().unmarshal(stringReader);
+    }
 
-	public T xmlToObject(String xml) throws JAXBException {
-		StringReader stringReader = new StringReader(xml);
-		return (T) createUnmarshaller().unmarshal(stringReader);
-	}
+    /**
+     * Creates a marshaller. Clients generally don't need to call this method,
+     * hence the method is protected. If you want use features not already
+     * exposed, you can subclass and call this method.
+     * 
+     * @return
+     * @throws JAXBException
+     * @throws PropertyException
+     * 
+     * @author Vineet Manohar
+     */
+    protected Marshaller createMarshaller() throws JAXBException, PropertyException {
+        Marshaller marshaller = jaxbContext.createMarshaller();
+        marshaller.setSchema(schema);
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, new Boolean(true));
+        return marshaller;
+    }
 
-	public T xmlToObject(InputStream is) throws JAXBException {
-		return (T) createUnmarshaller().unmarshal(is);
-	}
+    /**
+     * Creates a marshaller. Clients generally don't need to call this method,
+     * hence the method is protected. If you want use features not already
+     * exposed, you can subclass and call this method.
+     * 
+     * @return
+     * @throws JAXBException
+     * 
+     * @author Vineet Manohar
+     */
+    protected Unmarshaller createUnmarshaller() throws JAXBException {
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        unmarshaller.setSchema(schema);
+        return unmarshaller;
+    }
 }
