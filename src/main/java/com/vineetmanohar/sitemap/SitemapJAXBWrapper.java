@@ -23,72 +23,77 @@ import com.vineetmanohar.sitemap.jaxb.Urlset;
  * @author Vineet Manohar
  */
 public class SitemapJAXBWrapper {
-    private static Log log = LogFactory.getLog(SitemapJAXBWrapper.class);
-    private static JAXBContext jaxbContext = null;
-    private static SchemaFactory schemaFactory = null;
+	private static boolean initialized = false;
+	private static JAXBContext jaxbContext = null;
+	private static Log log = LogFactory.getLog(SitemapJAXBWrapper.class);
 
-    private static Schema schema;
+	private static Schema schema;
 
-    private static boolean initialized = false;
+	private static SchemaFactory schemaFactory = null;
 
-    static {
-        try {
-            init();
-        } catch (JAXBException e) {
-            throw new RuntimeException("Could not intialize class", e);
-        } catch (SAXException e) {
-            throw new RuntimeException("Could not intialize class", e);
-        }
-    }
+	static {
+		try {
+			init();
+		} catch (JAXBException e) {
+			throw new RuntimeException("Could not intialize class", e);
+		} catch (SAXException e) {
+			throw new RuntimeException("Could not intialize class", e);
+		}
+	}
 
-    private static Marshaller createMarshaller(Schema schema) throws JAXBException, PropertyException {
-        Marshaller marshaller = jaxbContext.createMarshaller();
-        marshaller.setSchema(schema);
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, new Boolean(true));
-        return marshaller;
-    }
+	private static Marshaller createMarshaller() throws JAXBException {
+		return createMarshaller(schema);
+	}
 
-    private static Unmarshaller createUnmarshaller(Schema schema) throws JAXBException {
-        Unmarshaller nsfUnmarshaller = jaxbContext.createUnmarshaller();
-        nsfUnmarshaller.setSchema(schema);
-        return nsfUnmarshaller;
-    }
+	private static Marshaller createMarshaller(Schema schema)
+			throws JAXBException, PropertyException {
+		Marshaller marshaller = jaxbContext.createMarshaller();
+		marshaller.setSchema(schema);
+		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, new Boolean(
+				true));
+		return marshaller;
+	}
 
-    private static Marshaller createMarshaller() throws JAXBException {
-        return createMarshaller(schema);
-    }
+	private static Unmarshaller createUnmarshaller() throws JAXBException {
+		return createUnmarshaller(schema);
+	}
 
-    private static Unmarshaller createUnmarshaller() throws JAXBException {
-        return createUnmarshaller(schema);
-    }
+	private static Unmarshaller createUnmarshaller(Schema schema)
+			throws JAXBException {
+		Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+		unmarshaller.setSchema(schema);
+		return unmarshaller;
+	}
 
-    public static String toXml(Urlset urlset) throws JAXBException {
-        StringWriter writer = new StringWriter();
-        createMarshaller().marshal(urlset, writer);
-        return writer.toString();
-    }
+	private static void init() throws JAXBException, SAXException {
+		if (initialized) {
+			log.info("jaxb context already initialized");
+			return;
+		}
 
-    private static void init() throws JAXBException, SAXException {
-        if (initialized) {
-            log.info("jaxb context already initialized");
-            return;
-        }
+		jaxbContext = JAXBContext.newInstance(Urlset.class);
+		schemaFactory = SchemaFactory
+				.newInstance("http://www.w3.org/2001/XMLSchema");
 
-        jaxbContext = JAXBContext.newInstance(Urlset.class);
-        schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+		schema = schemaFactory.newSchema(SitemapJAXBWrapper.class
+				.getResource("/sitemap.xsd"));
 
-        schema = schemaFactory.newSchema(SitemapJAXBWrapper.class.getResource("/sitemap.xsd"));
+		log.info("jaxb context initialized");
+		initialized = true;
+	}
 
-        log.info("jaxb context initialized");
-        initialized = true;
-    }
+	public static String toXml(Urlset urlset) throws JAXBException {
+		StringWriter writer = new StringWriter();
+		createMarshaller().marshal(urlset, writer);
+		return writer.toString();
+	}
 
-    public static void validate(Urlset urlSet) throws JAXBException {
-        createMarshaller().marshal(urlSet, new StringWriter());
-    }
+	public static void validate(Urlset urlSet) throws JAXBException {
+		createMarshaller().marshal(urlSet, new StringWriter());
+	}
 
-    public static Urlset xmlToObject(String xml) throws JAXBException {
-        StringReader stringReader = new StringReader(xml);
-        return (Urlset) createUnmarshaller().unmarshal(stringReader);
-    }
+	public static Urlset xmlToObject(String xml) throws JAXBException {
+		StringReader stringReader = new StringReader(xml);
+		return (Urlset) createUnmarshaller().unmarshal(stringReader);
+	}
 }
