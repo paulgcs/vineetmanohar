@@ -21,6 +21,10 @@ import java.util.regex.Pattern;
  * The first argument is the fully qualified class and method name. The
  * remaining arguments are arguments to the method that you are calling.
  * 
+ * Note: method overloading not supported
+ * 
+ * Note: method must be static
+ * 
  * @author Vineet Manohar
  */
 public class Call extends HashMap<String, Object> {
