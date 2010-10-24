@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>vineetmanohar</groupId>
 	<artifactId>vineetmanohar</artifactId>
-	<packaging>jar</packaging>
+	<packaging>war</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>vineetmanohar</name>
 	<url>http://www.vineetmanohar.com</url>
@@ -14,7 +14,12 @@
 			<url>http://download.java.net/maven/2/</url>
 			<layout>default</layout>
 		</pluginRepository>
-	</pluginRepositories>
+		<pluginRepository>
+			<id>vineetmanohar-release-repo</id>
+			<name>Vineet Manohar Release Repo</name>
+			<url>http://repo.vineetmanohar.com/releases</url>
+		</pluginRepository>
+		</pluginRepositories>
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -29,7 +34,23 @@
 			<artifactId>commons-logging</artifactId>
 			<version>1.0.4</version>
 		</dependency>
+    
+        <!-- bean utils, for bean introspection -->
+        <dependency>
+          <groupId>commons-beanutils</groupId>
+          <artifactId>commons-beanutils</artifactId>
+          <version>1.8.3</version>
+        </dependency>
+        
+        <!-- servlets -->
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>2.4</version>
+        <scope>provided</scope>
+      </dependency>        
 	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -39,6 +60,26 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>com.vineetmanohar</groupId>
+				<artifactId>maven-twitter-plugin</artifactId>
+				<version>0.1</version>
+
+				<executions>
+					<execution>
+						<id>test-passed</id>
+						<configuration>
+							<twitterStatus>#Maven tests passed (Sent via #mvn)</twitterStatus>
+						</configuration>
+						<phase>test</phase>
+						<goals>
+							<goal>tweet</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
        			<!-- jaxb plugin -->
 				<groupId>org.jvnet.jaxb2.maven2</groupId>
