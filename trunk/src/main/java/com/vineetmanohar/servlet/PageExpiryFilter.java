@@ -28,10 +28,9 @@ import javax.servlet.http.HttpServletResponse;
  * age of the page. Examples:
  * 
  * ^/images/.*$ = 2M # 2 month expiry for all resources in images directory
- * ^.*\\.css$   = 1M # 1 month expiry for all pages which have .css extension
- * ^/$          = 1h # 1 hr expiry for home page 
- * .*           = 1m # 1 min expiry for all other pages
- *  
+ * ^.*\\.css$ = 1M # 1 month expiry for all pages which have .css extension ^/$
+ * = 1h # 1 hr expiry for home page .* = 1m # 1 min expiry for all other pages
+ * 
  * Left hand side is full regex. Right hand side is the age. The supported units
  * are:
  * 
@@ -40,6 +39,10 @@ import javax.servlet.http.HttpServletResponse;
  * 3) Order is important. The first matching regular expression will be used.
  * 
  * @author Vineet Manohar http://www.vineetmanohar.com
+ * 
+ *         Etag: W/"14961-1287895605000"
+ * 
+ *         Expires: Wed, 24 Nov 2010 08:48:33 EST
  */
 public class PageExpiryFilter implements javax.servlet.Filter {
 	private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory
@@ -58,25 +61,59 @@ public class PageExpiryFilter implements javax.servlet.Filter {
 	 */
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
-		chain.doFilter(request, response);
-
 		if (response instanceof HttpServletResponse) {
 			if (request instanceof HttpServletRequest) {
 				HttpServletRequest httpServletRequest = (HttpServletRequest) request;
 				String path = httpServletRequest.getServletPath();
 				HttpServletResponse httpServletResponse = (HttpServletResponse) response;
 
-				String expiryDate = getExpiryHeaderFor(path);
+				String expiryDate = null;
+				String lastModified = null;
 
-				if (expiryDate != null) {
-					httpServletResponse.setHeader("Expires", expiryDate);
-					log.debug("expiration date set for path: " + path + " = "
-							+ expiryDate);
-				} else {
+				for (String regex : pathRegex.keySet()) {
+					if (path.matches(regex)) {
+						Integer age = pathRegex.get(regex);
+						// expiry date
+						{
+							Calendar calendar = Calendar.getInstance();
+							calendar.add(Calendar.MINUTE, age);
+
+							expiryDate = new SimpleDateFormat(
+									"EEE, dd MMM yyyy HH:mm:ss z")
+									.format(calendar.getTime());
+							httpServletResponse
+									.setHeader("Expires", expiryDate);
+							log.debug("expiration date set for path: " + path
+									+ " = " + expiryDate);
+						}
+						// last modified
+						/*
+						 * { Calendar calendar = Calendar.getInstance();
+						 * calendar.add(Calendar.MINUTE, -age);
+						 * 
+						 * lastModified = new SimpleDateFormat(
+						 * "EEE, dd MMM yyyy HH:mm:ss z")
+						 * .format(calendar.getTime());
+						 * 
+						 * httpServletResponse.setHeader("Last-Modified",
+						 * lastModified);
+						 * log.debug("last modified date set for path: " + path
+						 * + " = " + lastModified); }
+						 */
+
+						break;
+					}
+				}
+
+				if (expiryDate == null) {
 					log.warn("No expiration date set for path: " + path);
 				}
 			}
 		}
+
+		// chain.doFilter() should be called after writing the header. If it is
+		// called _before_ writing the header
+		chain.doFilter(request, response);
 	}
 
 	/**
